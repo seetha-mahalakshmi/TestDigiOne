@@ -1,0 +1,547 @@
+﻿@using System.Web.Optimization
+
+@model DigiOne.Dynamic.ViewModels.UpdateInformationViewModel
+
+@if (Session["UpdateInformation"] == null)
+{
+    @Styles.Render("~/DigiOne/UpdateInformation/Styles")
+}
+
+@{
+    string divisor = string.Empty;
+}
+<div id="@Model.Id" class="@Model.Style @Model.ClassName">
+    <div class="digione-view-all-history">
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="title">
+                    <span class="icon icon-wifi"></span><span>最新情報</span>
+                </div>
+                @if (Model.showDomainsSection)
+                {
+                    <div class="select_content">
+                        <input type="checkbox" name="all-territory" data-bind="checked: isAllDomainCheck">
+                        <input type="hidden">
+                        <label for="all-territory">全ての領域を表示</label>
+                    </div>
+                }
+            </div>
+        </div>
+
+        @if (Model.showDomainsSection)
+        {
+            <div class="row">
+                <div class="col-xs-12">
+                    <div class="row menu_info_interest col-xs-12">
+                        <span class="sub_menu_title">
+                            関心領域の情報を表示中
+                        </span>
+
+                        <!-- ko if: !isViewAllDisplay()-->
+                        @foreach (var domain in Model.DomainInfoList)
+                        {
+                            <div class="items-icon">
+                                <a href="javascript:void(0)">
+                                    @if (!string.IsNullOrEmpty(domain.DomainIcon))
+                                    {
+                                        String url = Request.Url.Scheme + "://" + Request.Url.Host + domain.DomainIcon;
+                                        <span style="background-image:url('@url')" class="icon-own">@domain.DomainDisplayName</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="icon-own">@domain.DomainDisplayName</span>
+                                    }
+                                </a>
+                            </div>
+                        }
+                        <!-- /ko -->
+                        <!-- ko if: isViewAllDisplay()-->
+                        <div data-bind="foreach:DomainInfoList">
+                            <div class="items-icon active">
+                                <a href="javascript:void(0)">
+                                    <span class="icon icon-own" data-bind="style: { backgroundImage: 'url('+DomainIcon+')'}">
+                                        <span data-bind="text:DomainDisplayName"></span>
+                                    </span>
+                                </a>
+                            </div>
+                        </div>
+                        <!-- /ko -->
+
+                        <div class="other-territory">
+                            <input type="checkbox" name="other-territory" data-bind="checked: isOtherDomainCheck">
+                            <input type="hidden">
+                            <label for="other-territory">他の領域も表示</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                <!-- Tab DashBoard -->
+                <div class="digione-tab tabbable" role="tabpanel">
+                    <!-- Nav tabs -->
+                    <ul class="nav nav-tabs list-auto-height" role="tablist">
+                        <li role="tab" class="active">
+                            <a href="#tab1-dashboard" role="tab" data-toggle="tab">全ての最新情報</a>
+                        </li>
+                        <li role="tab">
+                            <a href="#tab2-dashboard" aria-controls="tab2-dashboard" role="tab" data-toggle="tab">製品情報改訂（添付文書等）</a>
+                        </li>
+                        <li role="tab">
+                            <a href="#tab3-dashboard" aria-controls="tab3-dashboard" role="tab" data-toggle="tab">安全性情報</a>
+                        </li>
+                        <li role="tab">
+                            <a href="#tab5-dashboard" aria-controls="tab5-dashboard" role="tab" data-toggle="tab">その他の情報</a>
+                        </li>
+                    </ul>
+                    <!-- Tab panes -->
+                    <!-- ko if: !isViewAllDisplay()-->
+                    <div class="tab-content">
+                        <div role="tabpanel" class="tab-pane active" id="tab1-dashboard">
+                            @if (Model.AllUpToDateInfoList.ToList().Count < 1)
+                            {
+                                <span class="noData">@Model.noData</span>
+                            }
+
+                            @foreach (var item in Model.AllUpToDateInfoList)
+                            {
+                                if (item.ToList().Count > 0)
+                                {
+                                    divisor = string.Format("{0} {1} {2} {3}", Model.ConvertDocuments(item.ToList().First().DocumentsType), item.ToList().First().MiddleClassificationDisplayName, item.ToList().First().ProductItemDisplayName, item.ToList().First().DomainDisplayName);
+                                    <div class="tab_content_inter_section col-xs-12">
+                                        <div class="date col-xs-3 col-sm-2">@String.Format("{0:yyyy.MM.dd}", @item.ToList().First().UpdateDate)</div>
+                                        <div class="content_element col-xs-9 col-sm-10">
+                                            @if (divisor != "   ")
+                                            {
+                                                <div class="divisor">
+                                                    <span class="tag">@divisor</span>
+                                                </div>
+                                            }
+                                            <div class="divisor-second">
+                                                @if (item.ToList().First().ContentsType == 1) //PDF
+                                                {
+                                                    <a target="_blank" href="@item.ToList().First().Url" download>@item.ToList().First().UpdateContent</a>
+                                                }
+                                                else
+                                                {
+                                                    if (item.ToList().First().ContentsType == 2) // NEW WINDOW = EXTERNAL
+                                                    {
+                                                        <a target="_blank" href="@item.ToList().First().Url">@item.ToList().First().UpdateContent</a>
+                                                    }
+                                                    else // SAME WINDOW = INTERNAL
+                                                    {
+                                                        <a href="@item.ToList().First().Url">@item.ToList().First().UpdateContent</a>
+                                                    }
+                                                }
+                                                <!--1-->
+                                                @if (item.ToList().First().SummaryContent != null)
+                                                {
+                                                    <a style="display:block" href="@(item.ToList().First().SummaryPdf ?? "#")" target="_blank">
+                                                        <span class="text-file">@item.ToList().First().SummaryContent<span style="background-image:url('@Model.PdfIcon')" class="file-pdf"></span> </span>
+                                                    </a>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </div>
+                        <div role="tabpanel" class="tab-pane" id="tab2-dashboard">
+                            @if (Model.ProductUpdateInfoList.ToList().Count < 1)
+                            {
+                                <span class="noData">@Model.noData</span>
+                            }
+
+                            @foreach (var item in Model.ProductUpdateInfoList)
+                            {
+                                if (item.ToList().Count > 0)
+                                {
+                                    divisor = string.Format("{0} {1} {2} {3}", Model.ConvertDocuments(item.ToList().First().DocumentsType), item.ToList().First().MiddleClassificationDisplayName, item.ToList().First().ProductItemDisplayName, item.ToList().First().DomainDisplayName);
+                                    <div class="tab_content_inter_section col-xs-12">
+                                        <div class="date col-xs-3 col-sm-2">@String.Format("{0:yyyy.MM.dd}", @item.ToList().First().UpdateDate)</div>
+                                        <div class="content_element col-xs-9 col-sm-10">
+
+                                            @if (divisor != "   ")
+                                            {
+                                                <div class="divisor">
+                                                    <span class="tag">@divisor</span>
+                                                </div>
+                                            }
+                                            <div class="divisor-second">
+                                                @if (item.ToList().First().ContentsType == 1) //PDF
+                                                {
+                                                    <a target="_blank" href="@item.ToList().First().Url" download>@item.ToList().First().UpdateContent</a>
+                                                }
+                                                else
+                                                {
+                                                    if (item.ToList().First().ContentsType == 2) // NEW WINDOW = EXTERNAL
+                                                    {
+                                                        <a target="_blank" href="@item.ToList().First().Url">@item.ToList().First().UpdateContent</a>
+                                                    }
+                                                    else // SAME WINDOW = INTERNAL
+                                                    {
+                                                        <a href="@item.ToList().First().Url">@item.ToList().First().UpdateContent</a>
+                                                    }
+                                                }
+                                                <!--2-->
+                                                @if (item.ToList().First().SummaryContent != null)
+                                                {
+                                                    <a style="display:block" href="@(item.ToList().First().SummaryPdf ?? "#")" target="_blank"><span class="text-file">@item.ToList().First().SummaryContent<span style="background-image:url('@Model.PdfIcon')" class="file-pdf"></span> </span></a>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </div>
+                        <div role="tabpanel" class="tab-pane" id="tab3-dashboard">
+                            @if (Model.SafetyInfoList.ToList().Count < 1)
+                            {
+                                <span class="noData">@Model.noData</span>
+                            }
+
+                            @foreach (var item in Model.SafetyInfoList)
+                            {
+                                if (item.ToList().Count > 0)
+                                {
+                                    divisor = string.Format("{0} {1} {2} {3}", Model.ConvertDocuments(item.ToList().First().DocumentsType), item.ToList().First().MiddleClassificationDisplayName, item.ToList().First().ProductItemDisplayName, item.ToList().First().DomainDisplayName);
+                                    <div class="tab_content_inter_section col-xs-12">
+                                        <div class="date col-xs-3 col-sm-2">@String.Format("{0:yyyy.MM.dd}", @item.ToList().First().UpdateDate)</div>
+                                        <div class="content_element col-xs-9 col-sm-10">
+                                            @if (divisor != "   ")
+                                            {
+                                                <div class="divisor">
+                                                    <span class="tag">@divisor</span>
+                                                </div>
+                                            }
+                                            <div class="divisor-second">
+                                                @if (item.ToList().First().ContentsType == 1) //PDF
+                                                {
+                                                    <a target="_blank" href="@item.ToList().First().Url" download>@item.ToList().First().UpdateContent</a>
+                                                }
+                                                else
+                                                {
+                                                    if (item.ToList().First().ContentsType == 2) // NEW WINDOW = EXTERNAL
+                                                    {
+                                                        <a target="_blank" href="@item.ToList().First().Url">@item.ToList().First().UpdateContent</a>
+                                                    }
+                                                    else // SAME WINDOW = INTERNAL
+                                                    {
+                                                        <a href="@item.ToList().First().Url">@item.ToList().First().UpdateContent</a>
+                                                    }
+                                                }
+                                                <!--3-->
+                                                @if (item.ToList().First().SummaryContent != null)
+                                                {
+                                                    <a style="display:block" href="@(item.ToList().First().SummaryPdf ?? "#")" target="_blank">
+                                                        <span class="text-file">@item.ToList().First().SummaryContent<span style="background-image:url('@Model.PdfIcon')" class="file-pdf"></span> </span>
+                                                    </a>
+
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </div>
+
+                        <div role="tabpanel" class="tab-pane" id="tab5-dashboard">
+                            @if (Model.OtherInfoList.ToList().Count < 1)
+                            {
+                                <span class="noData">@Model.noData</span>
+                            }
+
+                            @foreach (var item in Model.OtherInfoList)
+                            {
+                                if (item.ToList().Count > 0)
+                                {
+                                    divisor = string.Format("{0} {1} {2} {3}", Model.ConvertDocuments(item.ToList().First().DocumentsType), item.ToList().First().MiddleClassificationDisplayName, item.ToList().First().ProductItemDisplayName, item.ToList().First().DomainDisplayName);
+                                    <div class="tab_content_inter_section col-xs-12">
+                                        <div class="date col-xs-3 col-sm-2">@String.Format("{0:yyyy.MM.dd}", @item.ToList().First().UpdateDate)</div>
+                                        <div class="content_element col-xs-9 col-sm-10">
+                                            @if (divisor != "   ")
+                                            {
+                                                <div class="divisor">
+                                                    <span class="tag">@divisor</span>
+                                                </div>
+                                            }
+                                            <div class="divisor-second">
+                                                @if (item.ToList().First().ContentsType == 1) //PDF
+                                                {
+                                                    <a target="_blank" download href="@item.ToList().First().Url">@item.ToList().First().UpdateContent</a>
+                                                }
+                                                else
+                                                {
+                                                    if (item.ToList().First().ContentsType == 2) // NEW WINDOW = EXTERNAL
+                                                    {
+                                                        <a target="_blank" href="@item.ToList().First().Url">@item.ToList().First().UpdateContent</a>
+                                                    }
+                                                    else // SAME WINDOW = INTERNAL
+                                                    {
+                                                        <a href="@item.ToList().First().Url">@item.ToList().First().UpdateContent</a>
+                                                    }
+                                                }
+                                                <!--4-->
+                                                @if (item.ToList().First().SummaryContent != null)
+                                                {
+                                                    <a style="display:block" href="@(item.ToList().First().SummaryPdf ?? "#")" target="_blank"><span class="text-file">@item.ToList().First().SummaryContent<span style="background-image:url('@Model.PdfIcon')" class="file-pdf"></span> </span></a>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+                    <!-- /ko -->
+                    <!-- ko if: isViewAllDisplay()-->
+                    <div class="tab-content">
+                        <div role="tabpanel" class="tab-pane active" id="tab1-dashboard">
+                            <span class="noData" data-bind="visible: AllUpToDateInfoList().length < 1" style="display: none">@Model.noData</span>
+
+                            <div data-bind="foreach:AllUpToDateInfoList">
+                                <div class="tab_content_inter_section col-xs-12">
+                                    <div class="date col-xs-3 col-sm-2" data-bind="text:UpdateDate"></div>
+                                    <div class="content_element col-xs-9 col-sm-10">
+                                        <div class="divisor" data-bind="visible:displayDivisor()">
+                                            <span class=" tag" data-bind="text:$parent.convertDocument(DocumentsType) +' '+ MiddleClassificationDisplayName+' '+ProductItemDisplayName+' '+DomainDisplayName">
+                                            </span>
+                                        </div>
+                                        <div class="divisor-second">
+
+                                            <!-- ko if: ContentsType == 1 -->
+                                            <a href="" target="_blank" download data-bind="text:UpdateContent, attr:{'href':Url}"></a>
+                                            <!-- /ko -->
+                                            <!-- ko if: ContentsType == 2 -->
+                                            <a target="_blank" href="" data-bind="text:UpdateContent, attr:{'href':Url}"></a>
+                                            <!-- /ko -->
+                                            <!-- ko if: ContentsType == 3 -->
+                                            <a href="" data-bind="text:UpdateContent, attr:{'href':Url}"></a>
+                                            <!-- /ko -->
+                                            <!-- ko if: SummaryContent != null -->
+                                            <!--5-->
+                                            <span class="text-file">
+                                                <a data-bind="attr: { href: SummaryPdf}" target="_blank">
+                                                    <span data-bind="text:SummaryContent"></span>
+                                                </a>
+                                                <!-- ko if:  $parent.PdfIcon() != null -->
+                                                <span data-bind="style: { backgroundImage: 'url('+$parent.PdfIcon()+')'}" class="file-pdf"></span>
+                                                <!-- /ko -->
+                                                <!-- ko if:  $parent.PdfIcon() == null -->
+                                                <span class="file-pdf"></span>
+                                                <!-- /ko -->
+                                            </span>
+                                            <!-- /ko -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div role="tabpanel" class="tab-pane" id="tab2-dashboard">
+                            <span class="noData" data-bind="visible: ProductUpdateInfoList().length < 1" style="display: none">@Model.noData</span>
+
+                            <div data-bind="foreach:ProductUpdateInfoList">
+                                <div class="tab_content_inter_section col-xs-12">
+                                    <div class="date col-xs-3 col-sm-2" data-bind="text:UpdateDate"></div>
+                                    <div class="content_element col-xs-9 col-sm-10">
+                                        <div class="divisor" data-bind="visible:displayDivisor()">
+                                            <span class="tag" data-bind="text:$parent.convertDocument(DocumentsType) +' '+ MiddleClassificationDisplayName+' '+ProductItemDisplayName+' '+DomainDisplayName"></span>
+                                        </div>
+                                        <div class="divisor-second">
+
+                                            <!-- ko if: ContentsType == 1 -->
+                                            <a target="_blank" download href="" data-bind="text:UpdateContent, attr:{'href':Url}"></a>
+                                            <!-- /ko -->
+                                            <!-- ko if: ContentsType == 2 -->
+                                            <a target="_blank" href="" data-bind="text:UpdateContent, attr:{'href':Url}"></a>
+                                            <!-- /ko -->
+                                            <!-- ko if: ContentsType == 3 -->
+                                            <a href="" data-bind="text:UpdateContent, attr:{'href':Url}"></a>
+                                            <!-- /ko -->
+                                            <!-- ko if: SummaryContent != null -->
+                                            <!--6-->
+                                            <span class="text-file">
+                                                <a data-bind="attr: { href: SummaryPdf}" target="_blank">
+                                                    <span data-bind="text:SummaryContent"></span>
+                                                </a>
+                                                <!-- ko if:  $parent.PdfIcon() != null -->
+                                                <span data-bind="style: { backgroundImage: 'url('+$parent.PdfIcon()+')'}" class="file-pdf"></span>
+                                                <!-- /ko -->
+                                                <!-- ko if:  $parent.PdfIcon() == null -->
+                                                <span class="file-pdf"></span>
+                                                <!-- /ko -->
+                                            </span>
+                                            <!-- /ko -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div role="tabpanel" class="tab-pane" id="tab3-dashboard">
+                            <span class="noData" data-bind="visible: SafetyInfoList().length < 1" style="display: none">@Model.noData</span>
+
+                            <div data-bind="foreach:SafetyInfoList">
+                                <div class="tab_content_inter_section col-xs-12">
+                                    <div class="date col-xs-3 col-sm-2" data-bind="text:UpdateDate"></div>
+                                    <div class="content_element col-xs-9 col-sm-10">
+                                        <div class="divisor" data-bind="visible:displayDivisor()">
+                                            <span class="tag" data-bind="text:$parent.convertDocument(DocumentsType) +' '+ MiddleClassificationDisplayName+' '+ProductItemDisplayName+' '+DomainDisplayName"></span>
+                                        </div>
+                                        <div class="divisor-second">
+
+                                            <!-- ko if: ContentsType == 1 -->
+                                            <a target="_blank" download href="" data-bind="text:UpdateContent, attr:{'href':Url}"></a>
+                                            <!-- /ko -->
+                                            <!-- ko if: ContentsType == 2 -->
+                                            <a target="_blank" href="" data-bind="text:UpdateContent, attr:{'href':Url}"></a>
+                                            <!-- /ko -->
+                                            <!-- ko if: ContentsType == 3 -->
+                                            <a href="" data-bind="text:UpdateContent, attr:{'href':Url}"></a>
+                                            <!-- /ko -->
+                                            <!-- ko if: SummaryContent != null -->
+                                            <span class="text-file">
+                                                <!--7-->
+                                                <a data-bind="attr: { href: SummaryPdf}" target="_blank">
+                                                    <span data-bind="text:SummaryContent"></span>
+                                                </a>
+                                                <!-- ko if:  $parent.PdfIcon() != null -->
+                                                <span data-bind="style: { backgroundImage: 'url('+$parent.PdfIcon()+')'}" class="file-pdf"></span>
+                                                <!-- /ko -->
+                                                <!-- ko if:  $parent.PdfIcon() == null -->
+                                                <span class="file-pdf"></span>
+                                                <!-- /ko -->
+                                            </span>
+                                            <!-- /ko -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div role="tabpanel" class="tab-pane" id="tab5-dashboard">
+                            <span class="noData" data-bind="visible: OtherInfoList().length < 1" style="display: none">@Model.noData</span>
+
+                            <div data-bind="foreach:OtherInfoList">
+                                <div class="tab_content_inter_section col-xs-12">
+                                    <div class="date col-xs-3 col-sm-2" data-bind="text:UpdateDate"></div>
+                                    <div class="content_element col-xs-9 col-sm-10">
+                                        <div class="divisor" data-bind="visible:displayDivisor()">
+                                            <span class="tag" data-bind="text:$parent.convertDocument(DocumentsType) +' '+ MiddleClassificationDisplayName+' '+ProductItemDisplayName+' '+DomainDisplayName"></span>
+                                        </div>
+                                        <div class="divisor-second">
+
+                                            <!-- ko if: ContentsType == 1 -->
+                                            <a target="_blank" download href="" data-bind="text:UpdateContent, attr:{'href':Url}"></a>
+                                            <!-- /ko -->
+                                            <!-- ko if: ContentsType == 2 -->
+                                            <a target="_blank" href="" data-bind="text:UpdateContent, attr:{'href':Url}"></a>
+                                            <!-- /ko -->
+                                            <!-- ko if: ContentsType == 3 -->
+                                            <a href="" data-bind="text:UpdateContent, attr:{'href':Url}"></a>
+                                            <!-- /ko -->
+                                            <!-- ko if: SummaryContent != null -->
+                                            <!--8-->
+                                            <span class="text-file">
+                                                <a data-bind="attr: { href: SummaryPdf}" target="_blank">
+                                                    <span data-bind="text:SummaryContent"></span>
+                                                </a>
+                                                <!-- ko if:  $parent.PdfIcon() != null -->
+                                                <span data-bind="style: { backgroundImage: 'url('+$parent.PdfIcon()+')'}" class="file-pdf"></span>
+                                                <!-- /ko -->
+                                                <!-- ko if:  $parent.PdfIcon() == null -->
+                                                <span class="file-pdf"></span>
+                                                <!-- /ko -->
+                                            </span>
+                                            <!-- /ko -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- /ko -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (Session["UpdateInformation"] == null)
+{
+    Session["UpdateInformation"] = true;
+    @Scripts.Render("~/DigiOne/UpdateInformation/Scripts")
+}
+
+<script type="text/javascript">
+    $(function () {
+        var updateInformation = new DigiOne.UpdateInformation();
+        var convertDocuments = function (documentsType) {
+
+            var result = "";
+            if (documentsType != null && documentsType != 0) {
+                if (documentsType == 1) {
+                    result = "添付文書";
+                }
+                else if (documentsType == 2) {
+                    result = "使用上の注意改定のお知らせ";
+                }
+                else if (documentsType == 3) {
+                    result = "「使用上の注意」の解説";
+                }
+                else if (documentsType == 4) {
+                    result = "インタビューフォーム";
+                }
+                else if (documentsType == 5) {
+                    result = "くすりのしおり";
+                }
+                else if (documentsType == 6) {
+                    result = "剤形写真";
+                }
+                else if (documentsType == 7) {
+                    result = "包装等変更案内";
+                }
+                else if (documentsType == 8) {
+                    result = "適正使用情報";
+                }
+                else if (documentsType == 9) {
+                    result = "適正使用ガイド";
+                }
+                else if (documentsType == 10) {
+                    result = "患者向医薬品ガイド";
+                }
+                else if (documentsType == 11) {
+                    result = "製造販売後調査集計";
+                }
+                else if (documentsType == 12) {
+                    result = "製品FAQ";
+                }
+                else if (documentsType == 13) {
+                    result = "市販直後調査結果";
+                }
+                else if (documentsType == 14) {
+                    result = "緊急安全性情報";
+                }
+                else if (documentsType == 15) {
+                    result = "販売中止・移管製品情報";
+                }
+                else if (documentsType == 16) {
+                    result = "その他";
+                }
+                else if (documentsType == 17) {
+                    result = "患者指導箋";
+                }
+                else if (documentsType == 18) {
+                    result = "使用説明書";
+                }
+            }
+            return result;
+
+             
+        }
+        updateInformation.init('@Model.Id', convertDocuments);
+    });
+</script>
